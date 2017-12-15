@@ -1,12 +1,14 @@
 const express        = require('express');
 const MongoClient    = require('mongodb').MongoClient;
 const bodyParser     = require('body-parser');
-const mongoose         = require('mongoose');
+const mongoose       = require('mongoose');
 const config         = require('./config/config');
 const db             = require('./config/db');
 const log            = require('./config/log')(module); //Передаем  модуль в метод
 const app            = express();
 
+//global variables
+global.__basedir = __dirname;
 
 // app.use(express.methodOverride()); // Support PUT and DELETE //TODO все падает
 app.use(bodyParser.urlencoded({ extended: true })); //Include JSON parser

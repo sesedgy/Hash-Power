@@ -12,6 +12,8 @@
     "axios": "^0.16.2",
     "body-parser": "^1.18.2",
     "express": "^4.16.2",
+    "formidable": "^1.1.1",
+    "md5": "^2.2.1",
     "mongodb": "^2.2.33",
     "mongoose": "^4.12.5",
     "nconf": "^0.8.5",
