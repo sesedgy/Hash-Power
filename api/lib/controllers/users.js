@@ -15,8 +15,14 @@ module.exports = function(app) {
         let hashPrivateKey = HashService.getHash(req.params.key);
         return UserModel.findOne({ 'privateKey': hashPrivateKey }, function (err, user) {
             if (!err) {
-                user.privateKey = undefined;
-                return res.send(user);
+                //TODO Проверка если ключ - говно
+                if (user === null){
+                    res.statusCode = 401;
+                    return res.send({ error: 'Unauthorized' });
+                }else{
+                    user.privateKey = undefined;
+                    return res.send(user);
+                }
             } else {
                 res.statusCode = 500;
                 log.warn(moduleName + '; Get user - findOne: ' + err.message);
@@ -52,17 +58,23 @@ module.exports = function(app) {
     app.get('/api/users/:key/deposit', (req, res) => {
         return UserModel.findOne({ 'privateKey': HashService.getHash(req.params.key) }, function (err, user) {
             if (!err) {
-                let addressLabel = user.id + "_" + new Date().toLocaleDateString() + "_" + new Date().toLocaleTimeString();
-                WalletService.createAdress(addressLabel)
-                    .then(response => {
-                        return res.send({address: response.data.address});
-                    })
-                    .catch(error => {
-                        res.statusCode = 500;
-                        res.send({ error: 'Server error' });
-                        log.warn('UsersController: Address do not created - deposit');
-                    });
+                //TODO Проверка если ключ - говно
+                if (user === null){
+                    res.statusCode = 401;
+                    return res.send({ error: 'Unauthorized' });
+                }else {
+                    let addressLabel = user.id + "_" + new Date().toLocaleDateString() + "_" + new Date().toLocaleTimeString();
+                    WalletService.createAdress(addressLabel)
+                        .then(response => {
+                            return res.send({address: response.data.address});
+                        })
+                        .catch(error => {
+                            res.statusCode = 500;
+                            res.send({error: 'Server error'});
+                            log.warn('UsersController: Address do not created - deposit');
+                        });
 
+                }
             } else {
                 res.statusCode = 500;
                 log.warn(moduleName + '; Deposit balance - Do not find user deposit');
@@ -72,7 +84,7 @@ module.exports = function(app) {
 
     });
 
-    //Withdrawal balance (amount in satoshi)
+    //Withdrawal balance (amount in bitcoin)
     //Отправляем битки на адрес пользователя(если сумма больше всех наших комиссий), иначе возвращаем сообщение что бабок недостаточно
     //privateKey, amount, address for withdrawal
     app.get('/api/users/:key/withdrawal/:amount&:toAddress', (req, res) => {
@@ -80,7 +92,7 @@ module.exports = function(app) {
         return UserModel.findOne({ 'privateKey': hashPrivateKey }, function (err, user) {
             if (!err) {
                 if(user !== []){//TODO Проверить что возвращается когда ни один элемент не подходит условию
-                    let amount = req.params.amount;
+                    let amount = req.params.amount * 100000000;//convert to satoshi
                     if(user.balance > amount + (amount * config.get('wallet:commission')) + (amount * config.get('withdrawalCommissionPercent'))){
                         UserModel.update(
                             {_id: user.id},  //TODO Проверить, возможно: "task._doc._id.toString()"
@@ -106,7 +118,7 @@ module.exports = function(app) {
                             }
                         );
                     }else{
-                        res.statusCode = 500;
+                        res.statusCode = 402;
                         return res.send({ error: 'You have not enough money' });
                     }
                 }
