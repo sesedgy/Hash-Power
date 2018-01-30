@@ -1,0 +1,199 @@
+<!doctype html>
+<html class="no-js" lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title></title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="manifest" href="site.webmanifest">
+        <link rel="apple-touch-icon" href="icon.png">
+        <link rel="icon" href="favicon.ico">
+
+        <link rel="stylesheet" href="css/normalize.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css" integrity="sha384-Zug+QiDoJOrZ5t4lssLdxGhVrurbmBWopoEl+M6BdEfwnCJZtKxi1KgxUyJq13dy" crossorigin="anonymous">        <link rel="stylesheet" href="css/open-iconic-bootstrap.min.css">
+        <link rel="stylesheet" href="css/custom.css">
+        <link rel="stylesheet" href="css/spinner.css">
+        <link rel="stylesheet" href="css/pnotify.custom.min.css">
+
+    </head>
+    <body id="mainWindow">
+        <!--[if lte IE 9]>
+            <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience and security.</p>
+        <![endif]-->
+        <nav class="navbar navbar-dark navbar-expand-lg toolbar">
+            <a class="navbar-brand navbar-text">BrutePool.io</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse row justify-content-end" id="navbarSupportedContent">
+                <ul class="navbar-nav col-auto">
+                    <li class="nav-item">
+                        <a class="nav-link oi oi-plus"></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link oi oi-magnifying-glass" onclick="logIn()"></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link oi oi-question-mark" style="padding-top:6px;"></a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link oi oi-person" id="personDropdown" data-toggle="dropdown" aria-expanded="false">
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="personDropdown">
+                            <a class="dropdown-item" data-toggle="modal" data-target="#signUpModal">SignUp</a>
+                            <a class="dropdown-item" data-toggle="modal" data-target="#logInModal">LogIn</a>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+
+        <div class="modal fade" id="signUpModal" tabindex="-1" role="dialog" aria-labelledby="signUpModalLabel">
+            <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="signUpModalLabel">SignUp</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="lead" id="signUpInstructionText">Click on button for create private key</p>
+                        <p class="lead" id="signUpKeyText"></p>
+                        <button type="button" class="btn btn-primary" id="signUpButton" onclick="signUp()">Create account</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="logInModal" tabindex="-1" role="dialog" aria-labelledby="logInModalLabel">
+            <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="logInModalLabel">LogIn</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row" id="logInForm">
+                            <div class="col col-10">
+                                <div class="form-group">
+                                    <label for="privateKey_LogIn">Private key</label>
+                                    <input id="privateKey_LogIn" class="form-control" aria-describedby="emailHelp" placeholder="Enter private key">
+                                </div>
+                            </div>
+                            <div class="col col-2" style="margin-top: 32px;">
+                                <button class="btn btn-primary" type="button" onclick="logIn()">LogIn</button>
+                            </div>
+                        </div>
+                        <div id="userWallet" style="display: none">
+                            <div class="row">
+                                <div class="col col-10">
+                                    <p class="lead" id="walletBalance">
+                                    </p>
+                                </div>
+                                <div class="col col-2">
+                                    <div class="btn-group" role="group" aria-label="">
+                                        <button class="btn btn-primary oi oi-plus" type="button" onclick="depositFormShow()"></button>
+                                        <button class="btn btn-primary oi oi-minus" type="button" onclick="withdrawalFormShow()"></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col col-12" id="depositForm" style="display: none">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col col-12">
+                                                    <p class="lead">
+                                                        Generate single-use bitcoin address <br/> <b>ATTENTION: for each payment need to generate a new address</b>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col col-12">
+                                                    <button class="btn btn-primary" type="button" onclick="generateDepositAddress()">Generate</button>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col col-12">
+                                                    <p class="lead" style="margin-top: 16px; margin-bottom: 0" id="depositAddressText">
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col col-12" id="withdrawalForm" style="display: none">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col col-7">
+                                                    <div class="form-group">
+                                                        <label for="addressWithdrawal">Address</label>
+                                                        <input id="addressWithdrawal" class="form-control" placeholder="Enter withdrawal address">
+                                                    </div>
+                                                </div>
+                                                <div class="col col-3">
+                                                    <div class="form-group">
+                                                        <label for="addressWithdrawal">Amount</label>
+                                                        <input type="number" id="amountWithdrawal" class="form-control" placeholder="0.001">
+                                                    </div>
+                                                </div>
+                                                <div class="col col-2" style="margin-top: 32px;">
+                                                    <button class="btn btn-primary" type="button" onclick="withdrawalBalance()">Withdrawal</button>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col col-12">
+                                                    <p class="lead" style="margin-top: 16px; margin-bottom: 0" id="successWithdrawalText">
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!--Loader-->
+        <div id="loader" style="display: none">
+            <div class="blackout"></div>
+            <div id="spinner" class="lds-double-ring">
+                <div></div>
+                <div></div>
+            </div>
+        </div>
+
+        <script src="js/vendor/modernizr-3.5.0.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+        <script>window.jQuery || document.write('<script src="js/vendor/jquery-3.2.1.min.js"><\/script>')</script>
+        <script src="js/plugins.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
+
+        <script src="js/vendor/notify.js"></script>
+        <script src="js/vendor/pnotify.custom.min.js"></script>
+
+        <script src="js/main.js"></script>
+
+        <!-- Google Analytics: change UA-XXXXX-Y to be your site's ID. -->
+        <script>
+            window.ga=function(){ga.q.push(arguments)};ga.q=[];ga.l=+new Date;
+            ga('create','UA-XXXXX-Y','auto');ga('send','pageview')
+        </script>
+        <script src="https://www.google-analytics.com/analytics.js" async defer></script>
+    </body>
+</html>

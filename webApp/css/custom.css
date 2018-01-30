@@ -1,0 +1,54 @@
+a{
+    cursor: pointer;
+}
+
+body{
+    background-color: #FAFAFA;
+}
+
+.navbar{
+    background-color: #607D8B;
+}
+
+.navbar-text{
+    color: #FAFAFA !important;
+}
+
+.dropdown-item:active{
+    background-color : #B0BEC5 !important;
+}
+
+.btn-primary{
+    background-color: #607D8B;
+    border-color: #607D8B;
+}
+
+.btn-primary:hover{
+    background-color: #546E7A;
+    border-color: #546E7A;
+}
+
+.btn-primary:focus{
+    box-shadow: 0 0 0 0.2rem;
+}
+
+.btn-primary:not([disabled]):not(.disabled):active{
+    background-color: #455A64;
+    border-color: #455A64;
+    box-shadow: 0 0 0 0.2rem rgba(69, 90, 100, 0.5);
+}
+
+.btn-primary::selection{
+    background: rgba(69, 90, 100, 0.5);
+}
+
+.blackout{
+    background-color: #000; /* Чёрный фон */
+    height: 100%; /* Высота максимальна */
+    left: 0; /* Нулевой отступ слева */
+    opacity: 0.30; /* Степень прозрачности */
+    position: fixed; /* Фиксированное положение */
+    top: 0; /* Нулевой отступ сверху */
+    width: 100%; /* Ширина максимальна */
+    z-index: 10000; /* Заведомо быть НАД другими элементами */
+}
