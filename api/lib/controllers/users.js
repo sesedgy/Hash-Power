@@ -9,6 +9,8 @@ const moduleName           = "UsersController";
 module.exports = function(app) {
 
     //Get user
+    //Отдаем данные о пользователе (без приватного ключа)
+    //privateKey
     app.get('/api/users/:key', (req, res) => {
         let hashPrivateKey = HashService.getHash(req.params.key);
         return UserModel.findOne({ 'privateKey': hashPrivateKey }, function (err, user) {
@@ -24,6 +26,8 @@ module.exports = function(app) {
     });
 
     //Create user
+    //Создаем пользователя, генерирум приватный ключ и отправляем его в ответе
+    //-
     app.post('/api/users', (req, res) => {
         let privateKey = HashService.createGuidString();
         let user = new UserModel({
@@ -43,10 +47,12 @@ module.exports = function(app) {
     });
 
     //Deposit balance
+    //Создаем адрес для пополнения кошелька пользователя (для каждой операции генерируется одноразовый адрес)
+    //privateKey
     app.get('/api/users/:key/deposit', (req, res) => {
         return UserModel.findOne({ 'privateKey': HashService.getHash(req.params.key) }, function (err, user) {
             if (!err) {
-                let addressLabel = HashService.getHash(req.params.key) + "_" + new Date().toLocaleDateString() + "_" + new Date().toLocaleTimeString();
+                let addressLabel = user.id + "_" + new Date().toLocaleDateString() + "_" + new Date().toLocaleTimeString();
                 WalletService.createAdress(addressLabel)
                     .then(response => {
                         return res.send({address: response.data.address});
@@ -67,6 +73,8 @@ module.exports = function(app) {
     });
 
     //Withdrawal balance (amount in satoshi)
+    //Отправляем битки на адрес пользователя(если сумма больше всех наших комиссий), иначе возвращаем сообщение что бабок недостаточно
+    //privateKey, amount, address for withdrawal
     app.get('/api/users/:key/withdrawal/:amount&:toAddress', (req, res) => {
         let hashPrivateKey = HashService.getHash(req.params.key);
         return UserModel.findOne({ 'privateKey': hashPrivateKey }, function (err, user) {

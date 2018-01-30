@@ -13,6 +13,7 @@ const moduleName           = "TasksController";
 module.exports = function(app) {
 
     //Get list for all tasks
+    //-
     app.get('/api/tasks', (req, res) => {
         return TaskModel.find(function (err, tasks) {
             if (!err) {
@@ -32,6 +33,7 @@ module.exports = function(app) {
     });
 
     //Get free task
+    //-
     app.get('/api/freeTask', (req, res) => {
         return TaskModel.findOne({ 'status': 'Open' }, null, {sort: 'dateOfStart'}, function (err, tasks) {
             if(!tasks) {
@@ -66,6 +68,7 @@ module.exports = function(app) {
     });
 
     //Get most expensive task
+    //-
     app.get('/api/mostExpensiveTask', (req, res) => {
         return TaskModel.find(function (err, tasks) {
             if(!tasks) {
@@ -101,7 +104,8 @@ module.exports = function(app) {
         });
     });
 
-    //Get task(id)
+    //Get task by id
+    //taskId
     app.get('/api/tasks/:id', (req, res) => {
         return TaskModel.findById(req.params.id, function (err, task) {
             if(!task) {
@@ -128,7 +132,8 @@ module.exports = function(app) {
         });
     });
 
-    //Get task result
+    //Get task result by id and key
+    //taskId, taskPrivateKey
     app.get('/api/tasks/:id/result/:key', (req, res) => {
         let hashPrivateKey = HashService.getHash(req.params.key);
         return TaskModel.findById(req.params.id, function (err, task) {
@@ -147,8 +152,9 @@ module.exports = function(app) {
         });
     });
 
-    //Cancel work with task(id)
-    app.get('/api/tasks/cancelWork:id', (req, res) => {
+    //Cancel work with task
+    //taskId
+    app.get('/api/tasks/:id/cancelWork', (req, res) => {
         return TaskModel.findById(req.params.id, function (err, task) {
             if(!task) {
                 res.statusCode = 404;
@@ -184,7 +190,8 @@ module.exports = function(app) {
         });
     });
 
-    //Create task (reward in satoshi) {reward, dateOfEnd, privateKey, file}
+    //Create task (reward in satoshi)
+    //reward, dateOfEnd, taskPrivateKey, file
     app.post('/api/tasks', (req, res) => {
         let hashPrivateKey = HashService.getHash(req.body.privateKey);
         return UserModel.findOne({ 'privateKey': hashPrivateKey }, function (err, user) {
@@ -254,6 +261,7 @@ module.exports = function(app) {
         });
     });
 
+    //Когда кто-то получает таск методом GET, то счетчик работников таска увеличивается
     function increaseCountOfWorkers(task){
         TaskModel.update(
             {_id: task.id},  //TODO Проверить, возможно: "task._doc._id.toString()"

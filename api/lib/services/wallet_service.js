@@ -28,33 +28,21 @@ class WalletService{
         return axios.get('http://localhost:3000/merchant/' + this.walletInfo.guid + '/payment?password=' + this.walletInfo.mainPassword + '&to=' + toAddress + '&amount=' + amount);
     }
 
+    //Проверяем все незаархивированные адреса и если есть поступление денег, то зачисляем их пользователю и архивируем адрес
+    //TODO сейчас неиспользуемые адреса не удаляются т.е. в теории их может накопиться 100500
     checkPayments(){
         this.getAddressesList().then(response => {
             response.data.addresses.forEach((address) => {
                 if(address.balance !== 0){
-                    let hashPrivateKey = address.label.slice(0, address.label.indexOf('_'));
-                    UserModel.findOne({ 'privateKey': hashPrivateKey }, function (err, user) {
-                        if (!err){
-                            if(user) { //TODO может ошибка
-                                UserModel.update(
-                                    {_id: user.id},  //TODO Проверить, возможно: "task._doc._id.toString()"
-                                    {$set: {
-                                        'balance': user.balance + address.balance
-                                    }},
-                                    function (err) {
-                                        if (err){
-                                            res.statusCode = 500;
-                                            log.error('CRITICAL! ' + moduleName + '; CheckPayments - Dont update balance for ' + user.id + ' new balance is: ' + user.balance + address.balance);
-                                            return res.send({ error: 'Server error' });
-                                        }
-                                    }
-                                );
-                            }
-                        } else {
+                    let userId = address.label.slice(0, address.label.indexOf('_'));
+                    UserModel.findByIdAndUpdate(userId, {$set: {'balance': user.balance + address.balance}}, (err) => {
+                        if (err){
                             log.warn(moduleName + '; CheckPayments - findOne: ' + err.message);
+                        }else{
+                            this.archivingAnAddress(address.address);
+                            log.info(moduleName + '; User: ' + userId + ' have a new balance: ' + user.balance + address.balance);
                         }
                     });
-
                 }
             });
         })
