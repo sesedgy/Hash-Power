@@ -2,6 +2,7 @@ const express        = require('express');
 const MongoClient    = require('mongodb').MongoClient;
 const bodyParser     = require('body-parser');
 const mongoose       = require('mongoose');
+const cors           = require('cors');
 const config         = require('./config/config');
 const db             = require('./config/db');
 const log            = require('./config/log')(module); //Передаем  модуль в метод
@@ -9,6 +10,9 @@ const app            = express();
 
 //global variables
 global.__basedir = __dirname;
+
+//For 'Access-Control-Allow-Origin'
+app.use(cors({origin: config.get('appUrl')}));
 
 // app.use(express.methodOverride()); // Support PUT and DELETE //TODO все падает
 app.use(bodyParser.urlencoded({ extended: true })); //Include JSON parser
@@ -19,6 +23,7 @@ app.use(bodyParser.json());
 //
 
 require('./lib/controllers/tasks')(app);
+require('./lib/controllers/users')(app);
 
 app.listen(config.get('port'), () => {
     log.info('Express server listening on port ' + config.get('port'));

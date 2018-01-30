@@ -13,6 +13,7 @@ module.exports = function(app) {
         let hashPrivateKey = HashService.getHash(req.params.key);
         return UserModel.findOne({ 'privateKey': hashPrivateKey }, function (err, user) {
             if (!err) {
+                user.privateKey = undefined;
                 return res.send(user);
             } else {
                 res.statusCode = 500;
@@ -31,7 +32,6 @@ module.exports = function(app) {
 
         user.save(function (err) {
             if (!err) {
-                res.statusCode = 500;
                 return res.send(privateKey);
             } else {
                 console.log(err);

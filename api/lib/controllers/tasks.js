@@ -4,8 +4,10 @@ const path                 = require('path');
 const log                  = require('../../config/log')(module);
 const config               = require('../../config/config');
 const TaskModel            = require('../../config/db').TaskModel;
+const UserModel            = require('../../config/db').UserModel;
 const MailService          = require('../services/mail_service').MailService;
 const WalletService        = require('../services/wallet_service').WalletService;
+const HashService          = require('../services/hash_service').HashService;
 const moduleName           = "TasksController";
 
 module.exports = function(app) {

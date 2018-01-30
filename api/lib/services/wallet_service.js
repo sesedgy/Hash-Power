@@ -30,7 +30,7 @@ class WalletService{
 
     checkPayments(){
         this.getAddressesList().then(response => {
-            response.addresses.forEach((address) => {
+            response.data.addresses.forEach((address) => {
                 if(address.balance !== 0){
                     let hashPrivateKey = address.label.slice(0, address.label.indexOf('_'));
                     UserModel.findOne({ 'privateKey': hashPrivateKey }, function (err, user) {
