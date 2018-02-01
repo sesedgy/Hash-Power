@@ -20,7 +20,7 @@ module.exports = function(app) {
                 tasks.forEach(function (item) {
                     item.taskPath = undefined;
                     item.resolvedTaskPath = undefined;
-                    item.email = undefined;
+                    // item.email = undefined;
                     item.privateKey = undefined;
                 });
                 return res.send(tasks);
@@ -191,13 +191,13 @@ module.exports = function(app) {
     });
 
     //Create task (reward in satoshi)
-    //reward, dateOfEnd, taskPrivateKey, file
+    //reward, dateOfEnd, privateKey, file
     app.post('/api/tasks', (req, res) => {
         let hashPrivateKey = HashService.getHash(req.body.privateKey);
         return UserModel.findOne({ 'privateKey': hashPrivateKey }, function (err, user) {
             if (!err) {
                 if(user !== []){//TODO Проверить что возвращается когда ни один элемент не подходит условию
-                    let amount = task.reward;
+                    let amount = req.body.reward;
                     if(user.balance > amount + (amount * config.get('taskCommissionPercent'))){
                         UserModel.update(
                             {_id: user.id},  //TODO Проверить, возможно: "task._doc._id.toString()"
@@ -246,11 +246,11 @@ module.exports = function(app) {
                             }
                         );
                     }else{
-                        res.statusCode = 400;
+                        res.statusCode = 402;
                         return res.send({ error: 'You haven\'t enough money' });
                     }
                 }else{
-                    res.statusCode = 400;
+                    res.statusCode = 401;
                     return res.send({error: 'Private key is wrong'})
                 }
             } else {
