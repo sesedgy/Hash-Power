@@ -38,10 +38,10 @@
                         <a title="Create task" class="nav-link oi oi-plus" data-toggle="modal" data-target="#createTaskModal"></a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link oi oi-magnifying-glass" onclick="logIn()"></a>
+                        <a class="nav-link oi oi-magnifying-glass" onclick="openGetTaskResultModal()"></a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link oi oi-question-mark" style="padding-top:6px;"></a>
+                        <a title="Read manual" class="nav-link oi oi-question-mark" data-toggle="modal" data-target="#manualModal" style="padding-top:6px;"></a>
                     </li>
                     <li class="nav-item dropdown">
                         <a title="SignUp/LogIn" class="nav-link oi oi-person" id="personDropdown" data-toggle="dropdown" aria-expanded="false">
@@ -59,7 +59,7 @@
 
 
         <!--SignUp Modal-->
-        <div class="modal fade" id="signUpModal" tabindex="-1" role="dialog" aria-labelledby="signUpModalLabel">
+        <div class="modal fade" id="signUpModal" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="signUpModalLabel">
             <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -78,7 +78,7 @@
         </div>
 
         <!--LogIn Modal-->
-        <div class="modal fade" id="logInModal" tabindex="-1" role="dialog" aria-labelledby="logInModalLabel">
+        <div class="modal fade" id="logInModal" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="logInModalLabel">
             <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -173,8 +173,8 @@
             </div>
         </div>
 
-        <!--Add Task Modal-->
-        <div class="modal fade" id="createTaskModal" tabindex="-1" role="dialog" aria-labelledby="createTaskModalLabel">
+        <!--Create Task Modal-->
+        <div class="modal fade" id="createTaskModal" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="createTaskModalLabel">
             <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -184,19 +184,24 @@
                         </button>
                     </div>
                     <div class="modal-body">
-                        <form id="createTaskForm" method="post" enctype="multipart/form-data">
+                        <form id="createTaskForm" method="post" enctype="multipart/form-data" action="">
                             <div class="row">
-                                <div class="col col-7">
+                                <div class="col col-6">
                                     <div class="form-group">
                                         <label for="privateKey_CreateTask">Private key</label>
                                         <input id="privateKey_CreateTask" name="privateKey" class="form-control" placeholder="Enter your private key">
                                     </div>
                                 </div>
-                                <div class="col col-5">
+                            </div>
+                            <div class="row">
+                                <div class="col col-6">
                                     <div class="form-group">
                                         <label for="reward_CreateTask">Reward</label>
-                                        <input type="number" id="reward_CreateTask" name="reward" class="form-control" placeholder="0.001">
+                                        <input type="number" id="reward_CreateTask" name="reward" class="form-control" step="0.00001" placeholder="0.001" oninput="calculatePrice()">
                                     </div>
+                                </div>
+                                <div class="col col-6">
+                                    <p class="lead" id="totalPriceCreateTask" style="margin-top: 35px"></p>
                                 </div>
                             </div>
                             <div class="row">
@@ -209,19 +214,24 @@
                                 <div class="col col-3">
                                     <div class="form-group">
                                         <label for="timeOfEnd_CreateTask">Time of end(optional)</label>
-                                        <input type="time" id="timeOfEnd_CreateTask" name="privateKey" class="form-control">
+                                        <input type="time" id="timeOfEnd_CreateTask" name="timeOfEnd" class="form-control">
                                     </div>
                                 </div>
+                            </div>
+                            <div class="row">
                                 <div class="col col-6">
                                     <div class="form-group">
                                         <label for="fileWithTask_CreateTask">File with task</label>
                                         <input type="file" id="fileWithTask_CreateTask" name="fileWithTask" class="form-control">
                                     </div>
                                 </div>
+                                <div class="col col-6">
+                                    <p class="lead" style="margin-top: 35px">Only {.png .jpeg} files</p>
+                                </div>
                             </div>
-                            <div class="row justify-content-center">
+                            <div class="row justify-content-center" style="margin-top: 10px">
                                 <div class="col-xs-2">
-                                    <button class="btn btn-primary" type="submit">Create</button>
+                                    <button class="btn btn-primary" value="Create">Create</button>
                                 </div>
                             </div>
                         </form>
@@ -237,6 +247,55 @@
             </div>
         </div>
 
+        <!--Get Task Result Modal-->
+        <div class="modal fade" id="getTaskResultModal" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="getTaskResultModalLabel">
+            <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="getTaskResultModalLabel">Get task result</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row" id="getTaskResultForm">
+                            <div class="col col-5">
+                                <div class="form-group">
+                                    <label for="id_SearchTask">Task id</label>
+                                    <input id="id_SearchTask" class="form-control" placeholder="Enter task id">
+                                </div>
+                            </div>
+                            <div class="col col-5">
+                                <div class="form-group">
+                                    <label for="privateKey_SearchTask">Private key</label>
+                                    <input id="privateKey_SearchTask" class="form-control" placeholder="Enter private key">
+                                </div>
+                            </div>
+                            <div class="col col-2" style="margin-top: 32px;">
+                                <button class="btn btn-primary" type="button" onclick="getTaskResult()">Get result</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--Manual Modal-->
+        <div class="modal fade" id="manualModal" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="manualModalLabel">
+            <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="manualModalLabel">Manual</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>It's manual</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
 
         <!--Loader-->
@@ -259,6 +318,7 @@
         <script src="js/vendor/pnotify.custom.min.js"></script>
         <script src="js/vendor/jsgrid.min.js"></script>
         <script src="js/vendor/date.js"></script>
+        <script src="js/vendor/jquery.form.min.js"></script>
 
         <script src="js/main.js"></script>
 

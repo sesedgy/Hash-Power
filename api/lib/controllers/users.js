@@ -93,15 +93,15 @@ module.exports = function(app) {
             if (!err) {
                 if(user !== []){//TODO Проверить что возвращается когда ни один элемент не подходит условию
                     let amount = req.params.amount * 100000000;//convert to satoshi
-                    if(user.balance > amount + (amount * config.get('wallet:commission')) + (amount * config.get('withdrawalCommissionPercent'))){
+                    if(user.balance > amount + (amount * config.get('wallet:commission')) + (amount * config.get('withdrawalCommissionCoefficient'))){
                         UserModel.update(
-                            {_id: user.id},  //TODO Проверить, возможно: "task._doc._id.toString()"
+                            {_id: user._id},
                             {$set: {
-                                'balance': user.balance - amount - (amount * config.get('wallet:commission')) - (amount * config.get('withdrawalCommissionPercent'))
+                                'balance': user.balance - amount - (amount * config.get('wallet:commission')) - (amount * config.get('withdrawalCommissionCoefficient'))
                             }},
                             function (err) {
                                 if (!err){
-                                    let amountWithoutComissions = amount - (amount * config.get('wallet:commission')) - (amount * config.get('withdrawalCommissionPercent'));
+                                    let amountWithoutComissions = amount - (amount * config.get('wallet:commission')) - (amount * config.get('withdrawalCommissionCoefficient'));
                                     WalletService.makingOutgoingPayment(req.params.toAddress, amountWithoutComissions).then(() => {
                                         return res.send({status: 'OK'});
                                     }).catch(error => {
@@ -175,7 +175,7 @@ module.exports = function(app) {
         return UserModel.findOne({ 'privateKey': hashPrivateKey }, function (err, user) {
             if (!err) {
                 UserModel.update(
-                    {_id: user.id},  //TODO Проверить, возможно: "task._doc._id.toString()"
+                    {_id: user._id},
                     {$set: {
                         'email': req.body.email
                     }},

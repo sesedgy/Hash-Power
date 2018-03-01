@@ -1,6 +1,7 @@
 const formidable           = require('formidable');
 const fs                   = require('fs');
 const path                 = require('path');
+const multer               = require('multer');
 const log                  = require('../../config/log')(module);
 const config               = require('../../config/config');
 const TaskModel            = require('../../config/db').TaskModel;
@@ -9,8 +10,21 @@ const MailService          = require('../services/mail_service').MailService;
 const WalletService        = require('../services/wallet_service').WalletService;
 const HashService          = require('../services/hash_service').HashService;
 const moduleName           = "TasksController";
+const taskUploadPath       = config.get('taskUploadPath');
+const resultUploadPath     = config.get('resultUploadPath');
 
 module.exports = function(app) {
+
+    //Task upload settings
+    let storage = multer.diskStorage({
+        destination: function (req, file, callback) {
+            callback(null, taskUploadPath);
+        },
+        filename: function (req, file, callback) {
+            callback(null, file.fieldname + '-' + Date.now() + file.originalname.slice(file.originalname.lastIndexOf('.')));
+        }
+    });
+    let upload  = multer({ storage: storage });
 
     //Get list for all tasks
     //-
@@ -18,8 +32,8 @@ module.exports = function(app) {
         return TaskModel.find(function (err, tasks) {
             if (!err) {
                 tasks.forEach(function (item) {
-                    item.taskPath = undefined;
-                    item.resolvedTaskPath = undefined;
+                    item.taskFileName = undefined;
+                    item.resolvedTaskFileName = undefined;
                     // item.email = undefined;
                     item.privateKey = undefined;
                 });
@@ -50,7 +64,7 @@ module.exports = function(app) {
                 });
                 let resultOfFunction = increaseCountOfWorkers(tasks[indexOfTaskWithMaxReward]);
                 if(resultOfFunction === null){
-                    tasks[indexOfTaskWithMaxReward].resolvedTaskPath = undefined;
+                    tasks[indexOfTaskWithMaxReward].resolvedTaskFileName = undefined;
                     tasks[indexOfTaskWithMaxReward].email = undefined;
                     tasks[indexOfTaskWithMaxReward].privateKey = undefined;
                     return res.send(tasks[indexOfTaskWithMaxReward]);
@@ -87,7 +101,7 @@ module.exports = function(app) {
                 });
                 let resultOfFunction = increaseCountOfWorkers(tasks[mostExpensiveTaskIndex]);
                 if(resultOfFunction === null){
-                    tasks[mostExpensiveTaskIndex].resolvedTaskPath = undefined;
+                    tasks[mostExpensiveTaskIndex].resolvedTaskFileName = undefined;
                     tasks[mostExpensiveTaskIndex].email = undefined;
                     tasks[mostExpensiveTaskIndex].privateKey = undefined;
                     return res.send(tasks[mostExpensiveTaskIndex]);
@@ -115,7 +129,7 @@ module.exports = function(app) {
             if (!err) {
                 let resultOfFunction = increaseCountOfWorkers(task);
                 if(resultOfFunction === null){
-                    task.resolvedTaskPath = undefined;
+                    task.resolvedTaskFileName = undefined;
                     task.email = undefined;
                     task.privateKey = undefined;
                     return res.send(task);
@@ -142,12 +156,8 @@ module.exports = function(app) {
                 return res.send({ error: 'Not found' });
             }
             if (!err) {
-                //TODO Отправка файла с решением при получении решения
-                return res.send(task);
-            } else {
-                res.statusCode = 500;
-                log.warn(moduleName + '; Get task(id) - find: ' + err.message);
-                return res.send({ error: 'Server error' });
+                res.setHeader('Content-disposition', 'attachment; filename="' + task.resolvedTaskFileName + '"');
+                res.send(new Buffer(fs.readFileSync(global.__basedir + resultUploadPath + '/' + task.resolvedTaskFileName)).toString("base64"));
             }
         });
     });
@@ -162,12 +172,12 @@ module.exports = function(app) {
             }
             if (!err) {
                 if(task.countOfWorkers < 1){
-                    log.warn(moduleName + '; Count of workers is minimal - for task: ' + task.id); //TODO Проверить, возможно: "task._doc._id.toString()"
+                    log.warn(moduleName + '; Count of workers is minimal - for task: ' + task._id);
                     return res.send({status: 'OK'});
                 }
                 let newStatus = (task.countOfWorkers === 1) ? "Open" : "In progress";
                 TaskModel.update(
-                    {_id: task.id},  //TODO Проверить, возможно: "task._doc._id.toString()"
+                    {_id: task._id},
                     {$set: {
                         'countOfWorkers': task.countOfWorkers - 1,
                         'status': newStatus
@@ -192,51 +202,38 @@ module.exports = function(app) {
 
     //Create task (reward in satoshi)
     //reward, dateOfEnd, privateKey, file
-    app.post('/api/tasks', (req, res) => {
+    app.post('/api/tasks', upload.single('fileWithTask'), (req, res) => {
         let hashPrivateKey = HashService.getHash(req.body.privateKey);
         return UserModel.findOne({ 'privateKey': hashPrivateKey }, function (err, user) {
             if (!err) {
                 if(user !== []){//TODO Проверить что возвращается когда ни один элемент не подходит условию
-                    let amount = req.body.reward;
-                    if(user.balance > amount + (amount * config.get('taskCommissionPercent'))){
+                    let amount = req.body.reward * 100000000;
+                    if(user.balance > amount + (amount * config.get('taskCommissionCoefficient'))){
                         UserModel.update(
-                            {_id: user.id},  //TODO Проверить, возможно: "task._doc._id.toString()"
-                            {$set: {
-                                'balance': user.balance - amount - (amount * config.get('taskCommissionPercent'))
-                            }},
+                            {_id: user._id},
+                            {
+                                balance: user.balance - amount - (amount * config.get('taskCommissionCoefficient'))
+                            },
                             function (err) {
                                 if (!err){
                                     let taskPrivateKey = HashService.createGuidString();
-                                    let taskPath = null;
-                                    let form = new formidable.IncomingForm();
-                                    form.parse(req, function (err, fields, files) {
-                                        let oldpath = files.filetoupload.path;
-                                        taskPath = __basedir + taskPrivateKey + "." + files.filetoupload.name.slice(files.filetoupload.name.lastIndexOf('.') * -1);//TODO Затестить верно ли возвращает разрешение
-                                        fs.rename(oldpath, taskPath, function (err) {
-                                            if (!err){
-                                                let task = new TaskModel({
-                                                    taskPrivateKey: HashService.getHash(taskPrivateKey),
-                                                    taskPath: taskPath,
-                                                    reward: req.body.reward,
-                                                    dateOfEnd: req.body.dateOfEnd,
-                                                    status: "Open"
-                                                });
-                                                task.save(function (err) {
-                                                    if (!err) {
-                                                        res.send(taskPrivateKey);
-                                                    } else {
-                                                        res.statusCode = 500;
-                                                        res.send({ error: 'Server error' });
-                                                        log.warn(moduleName + '; Create task - save task');
-                                                    }
-                                                });
-
-                                            }else{
-                                                res.statusCode = 500;
-                                                res.send({ error: 'Server error' });
-                                                log.warn(moduleName + '; Create task - save file with task');
-                                            }
-                                        });
+                                    let taskFileName = req.file.filename;
+                                    let time = (req.body.timeOfEnd !== "") ? req.body.timeOfEnd : "00:00";
+                                    let task = new TaskModel({
+                                        privateKey: HashService.getHash(taskPrivateKey),
+                                        taskFileName: taskFileName,
+                                        reward: req.body.reward * 100000000,
+                                        dateOfEnd: (req.body.dateOfEnd !== "") ? new Date(time + " " + req.body.dateOfEnd) : null,
+                                        status: "Open"
+                                    });
+                                    task.save(function (err) {
+                                        if (!err) {
+                                            res.send(taskPrivateKey);
+                                        } else {
+                                            res.statusCode = 500;
+                                            res.send({ error: 'Server error' });
+                                            log.warn(moduleName + '; Create task - save task');
+                                        }
                                     });
                                 }else {
                                     res.statusCode = 500;
@@ -264,7 +261,7 @@ module.exports = function(app) {
     //Когда кто-то получает таск методом GET, то счетчик работников таска увеличивается
     function increaseCountOfWorkers(task){
         TaskModel.update(
-            {_id: task.id},  //TODO Проверить, возможно: "task._doc._id.toString()"
+            {_id: task._id},
             {$set: {
                 'countOfWorkers': task.countOfWorkers + 1
             }},
